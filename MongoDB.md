@@ -56,7 +56,8 @@ rs.status()
 $ sudo apt install -y openjdk-17-jdk maven
 
 $ git clone https://github.com/brianfrankcooper/YCSB.git && cd YCSB
-mvn -pl site.ycsb:mongodb-binding -am clean package
+
+$ mvn -pl site.ycsb:mongodb-binding -am clean package
 ```
 
 ### Run Workload A
