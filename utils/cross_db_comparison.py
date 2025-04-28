@@ -282,6 +282,78 @@ def create_thread_scaling_chart(all_results, output_dir, workload='a'):
     
     print(f"Saved thread scaling chart to {output_path}")
 
+def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='read_avg_latency'):
+    """Create a chart showing how latency scales with thread count for a specific workload."""
+    plt.figure(figsize=(14, 8))
+    
+    # Markers and colors for different databases
+    markers = ['o', 's', '^', 'D']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    # For each database, plot latency vs thread count
+    for i, (db_name, df) in enumerate(all_results.items()):
+        # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
+        if db_name == 'cassandra2-cql' and 'rf' in df.columns:
+            if 3 in df['rf'].values:
+                df = df[df['rf'] == 3]
+            elif 1 in df['rf'].values:
+                df = df[df['rf'] == 1]
+        
+        # Filter data for the specified workload
+        if 'workload' in df.columns:
+            workload_data = df[df['workload'] == workload]
+        else:
+            workload_data = df
+        
+        if not workload_data.empty and 'threads' in workload_data.columns and metric in workload_data.columns:
+            # Group by thread count and calculate mean latency
+            thread_groups = workload_data.groupby('threads')[metric].mean().reset_index()
+            
+            # Sort by thread count
+            thread_groups = thread_groups.sort_values('threads')
+            
+            # Format database name for display
+            display_name = db_name
+            if db_name == 'cassandra2-cql':
+                if 'rf' in df.columns and not df.empty:
+                    rf = df['rf'].iloc[0]
+                    display_name = f'Cassandra (RF={rf})'
+                else:
+                    display_name = 'Cassandra'
+            
+            # Plot line
+            plt.plot(thread_groups['threads'], thread_groups[metric], 
+                     marker=markers[i % len(markers)], markersize=8, 
+                     color=colors[i % len(colors)], linewidth=2, 
+                     label=display_name)
+    
+    # Set chart labels and title
+    plt.xlabel('Number of Threads', fontsize=14)
+    
+    metric_name = "Average Read Latency"
+    if metric == 'read_p99_latency':
+        metric_name = "P99 Read Latency"
+    
+    plt.ylabel(f'{metric_name} (μs)', fontsize=14)
+    plt.title(f'Database {metric_name} Scaling (Workload {workload.upper()})', fontsize=16)
+    
+    # Set x-axis to log scale for better visualization
+    plt.xscale('log', base=2)
+    
+    # Add grid
+    plt.grid(True, which="both", ls="-", alpha=0.7)
+    
+    # Add legend
+    plt.legend(fontsize=12)
+    
+    # Save the figure
+    metric_short = "avg" if metric == 'read_avg_latency' else "p99"
+    output_path = os.path.join(output_dir, f'db_latency_{metric_short}_scaling_workload{workload}.png')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Saved {metric_name} scaling chart to {output_path}")
+
 def main():
     parser = argparse.ArgumentParser(description='Compare performance across different databases')
     parser.add_argument('--mongodb-dir', type=str, default='results/mongodb', 
@@ -324,8 +396,10 @@ def main():
     
     # Generate thread scaling charts for each specified workload
     for workload in args.workloads:
-        print(f"\nGenerating thread scaling chart for workload {workload}...")
+        print(f"\nGenerating scaling charts for workload {workload}...")
         create_thread_scaling_chart(all_results, args.output_dir, workload)
+        create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_avg_latency')
+        create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_p99_latency')
     
     print("\nAll comparison charts generated successfully!")
 
