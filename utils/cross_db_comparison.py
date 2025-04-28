@@ -216,7 +216,7 @@ def create_latency_comparison_chart(all_results, output_dir, thread_count=16, me
     
     print(f"Saved {metric_name} comparison chart to {output_path}")
 
-def create_thread_scaling_chart(all_results, output_dir, workload='a'):
+def create_throughput_scaling_chart(all_results, output_dir, workload='a'):
     """Create a chart showing how throughput scales with thread count for a specific workload."""
     plt.figure(figsize=(12, 8))
     
@@ -276,11 +276,11 @@ def create_thread_scaling_chart(all_results, output_dir, workload='a'):
     plt.legend(fontsize=12)
     
     # Save the figure
-    output_path = os.path.join(output_dir, f'db_scaling_workload{workload}.png')
+    output_path = os.path.join(output_dir, f'db_throughput_scaling_workload{workload}.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"Saved thread scaling chart to {output_path}")
+    print(f"Saved throughput scaling chart to {output_path}")
 
 def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='read_avg_latency'):
     """Create a chart showing how latency scales with thread count for a specific workload."""
@@ -397,7 +397,7 @@ def main():
     # Generate thread scaling charts for each specified workload
     for workload in args.workloads:
         print(f"\nGenerating scaling charts for workload {workload}...")
-        create_thread_scaling_chart(all_results, args.output_dir, workload)
+        create_throughput_scaling_chart(all_results, args.output_dir, workload)
         create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_avg_latency')
         create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_p99_latency')
     
