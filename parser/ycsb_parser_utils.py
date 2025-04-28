@@ -5,8 +5,14 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-def parse_benchmark_result(file_path, db_name):
-    """Parse a YCSB benchmark result file and extract key metrics."""
+def parse_benchmark_result(file_path, db_name, filename_pattern=None):
+    """Parse a YCSB benchmark result file and extract key metrics.
+    
+    Args:
+        file_path: Path to the result file
+        db_name: Database name (mongodb, redis, zookeeper, cassandra2-cql)
+        filename_pattern: Custom regex pattern for extracting workload and thread info
+    """
     metrics = {}
     
     with open(file_path, 'r') as f:
@@ -14,10 +20,22 @@ def parse_benchmark_result(file_path, db_name):
         
         # Extract workload and thread count from filename
         filename = os.path.basename(file_path)
-        match = re.search(rf'{db_name}_workload([a-f])_(\d+)threads\.txt', filename)
+        
+        if filename_pattern:
+            match = re.search(filename_pattern, filename)
+        else:
+            # Default pattern for most databases
+            match = re.search(rf'{db_name}_workload([a-f])_(\d+)threads\.txt', filename)
+            
         if match:
-            metrics['workload'] = match.group(1)
-            metrics['threads'] = int(match.group(2))
+            if db_name == 'cassandra2-cql':
+                # Cassandra has a different pattern with replication factor
+                metrics['workload'] = match.group(2)
+                metrics['threads'] = int(match.group(3))
+                metrics['rf'] = int(match.group(1))
+            else:
+                metrics['workload'] = match.group(1)
+                metrics['threads'] = int(match.group(2))
         
         # Extract overall throughput
         throughput_match = re.search(r'\[OVERALL\], Throughput\(ops/sec\), ([\d\.]+)', content)
@@ -49,16 +67,26 @@ def parse_benchmark_result(file_path, db_name):
     
     return metrics
 
-def collect_all_results(results_dir, db_name):
-    """Collect results from all benchmark files in the directory."""
+def collect_all_results(results_dir, db_name, filename_pattern=None):
+    """Collect results from all benchmark files in the directory.
+    
+    Args:
+        results_dir: Directory containing result files
+        db_name: Database name
+        filename_pattern: Custom regex pattern for file matching
+    """
     results = []
     
     # Find all result files for the specified database
-    result_files = list(Path(results_dir).glob(f'{db_name}_workload*_*threads.txt'))
+    if db_name == 'cassandra2-cql':
+        # Cassandra has a different file pattern
+        result_files = list(Path(results_dir).glob(f'{db_name}_rf*_workload*_*threads.txt'))
+    else:
+        result_files = list(Path(results_dir).glob(f'{db_name}_workload*_*threads.txt'))
     
     for file_path in result_files:
         try:
-            metrics = parse_benchmark_result(file_path, db_name)
+            metrics = parse_benchmark_result(file_path, db_name, filename_pattern)
             if metrics:
                 results.append(metrics)
         except Exception as e:
@@ -74,6 +102,17 @@ def create_throughput_by_workload_chart(results, output_dir, db_name):
     workloads = sorted(df['workload'].unique())
     thread_counts = sorted(df['threads'].unique())
     
+    # For Cassandra, we might want to separate by replication factor
+    if 'rf' in df.columns:
+        rf_values = sorted(df['rf'].unique())
+        for rf in rf_values:
+            rf_df = df[df['rf'] == rf]
+            _create_throughput_chart(rf_df, workloads, thread_counts, output_dir, f"{db_name}_rf{rf}")
+    else:
+        _create_throughput_chart(df, workloads, thread_counts, output_dir, db_name)
+
+def _create_throughput_chart(df, workloads, thread_counts, output_dir, chart_name):
+    """Helper function to create throughput chart."""
     plt.figure(figsize=(12, 6))
     
     # Width of each bar group
@@ -107,7 +146,7 @@ def create_throughput_by_workload_chart(results, output_dir, db_name):
     # Set chart labels and title
     plt.xlabel('Workload', fontsize=12)
     plt.ylabel('Throughput (ops/sec)', fontsize=12)
-    plt.title(f'{db_name.capitalize()} YCSB Throughput by Workload and Thread Count', fontsize=14)
+    plt.title(f'{chart_name.capitalize()} YCSB Throughput by Workload and Thread Count', fontsize=14)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
@@ -119,7 +158,7 @@ def create_throughput_by_workload_chart(results, output_dir, db_name):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Save the figure
-    output_path = os.path.join(output_dir, f'{db_name}_throughput_by_workload.png')
+    output_path = os.path.join(output_dir, f'{chart_name}_throughput_by_workload.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     
@@ -133,6 +172,17 @@ def create_latency_by_thread_chart(results, output_dir, db_name):
     workloads = sorted(df['workload'].unique())
     thread_counts = sorted(df['threads'].unique())
     
+    # For Cassandra, we might want to separate by replication factor
+    if 'rf' in df.columns:
+        rf_values = sorted(df['rf'].unique())
+        for rf in rf_values:
+            rf_df = df[df['rf'] == rf]
+            _create_latency_chart(rf_df, workloads, thread_counts, output_dir, f"{db_name}_rf{rf}")
+    else:
+        _create_latency_chart(df, workloads, thread_counts, output_dir, db_name)
+
+def _create_latency_chart(df, workloads, thread_counts, output_dir, chart_name):
+    """Helper function to create latency chart."""
     plt.figure(figsize=(12, 6))
     
     # Width of each bar group
@@ -166,7 +216,7 @@ def create_latency_by_thread_chart(results, output_dir, db_name):
     # Set chart labels and title
     plt.xlabel('Workload', fontsize=12)
     plt.ylabel('Average Read Latency (μs)', fontsize=12)
-    plt.title(f'{db_name.capitalize()} YCSB Average Read Latency by Workload and Thread Count', fontsize=14)
+    plt.title(f'{chart_name.capitalize()} YCSB Average Read Latency by Workload and Thread Count', fontsize=14)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
@@ -178,7 +228,7 @@ def create_latency_by_thread_chart(results, output_dir, db_name):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Save the figure
-    output_path = os.path.join(output_dir, f'{db_name}_avg_latency_by_workload.png')
+    output_path = os.path.join(output_dir, f'{chart_name}_avg_latency_by_workload.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     
@@ -192,6 +242,17 @@ def create_p99_latency_chart(results, output_dir, db_name):
     workloads = sorted(df['workload'].unique())
     thread_counts = sorted(df['threads'].unique())
     
+    # For Cassandra, we might want to separate by replication factor
+    if 'rf' in df.columns:
+        rf_values = sorted(df['rf'].unique())
+        for rf in rf_values:
+            rf_df = df[df['rf'] == rf]
+            _create_p99_latency_chart(rf_df, workloads, thread_counts, output_dir, f"{db_name}_rf{rf}")
+    else:
+        _create_p99_latency_chart(df, workloads, thread_counts, output_dir, db_name)
+
+def _create_p99_latency_chart(df, workloads, thread_counts, output_dir, chart_name):
+    """Helper function to create P99 latency chart."""
     plt.figure(figsize=(12, 6))
     
     # Width of each bar group
@@ -225,7 +286,7 @@ def create_p99_latency_chart(results, output_dir, db_name):
     # Set chart labels and title
     plt.xlabel('Workload', fontsize=12)
     plt.ylabel('P99 Read Latency (μs)', fontsize=12)
-    plt.title(f'{db_name.capitalize()} YCSB P99 Read Latency by Workload and Thread Count', fontsize=14)
+    plt.title(f'{chart_name.capitalize()} YCSB P99 Read Latency by Workload and Thread Count', fontsize=14)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
@@ -237,7 +298,7 @@ def create_p99_latency_chart(results, output_dir, db_name):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Save the figure
-    output_path = os.path.join(output_dir, f'{db_name}_p99_latency_by_workload.png')
+    output_path = os.path.join(output_dir, f'{chart_name}_p99_latency_by_workload.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     
