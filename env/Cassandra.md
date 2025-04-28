@@ -121,3 +121,10 @@ mvn -pl site.ycsb:cassandra2 -am clean package -DskipTests
   -p cassandra.keyspace=ycsb > outputRun.txt
 ```
 
+---
+
+## Parser
+
+```bash
+python parser/cassandra_benchmark_parser.py --results-dir results/cassandra2 --output-dir charts/cassandra
+```

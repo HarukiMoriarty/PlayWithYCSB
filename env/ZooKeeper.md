@@ -116,3 +116,11 @@ bin/zkCli.sh -server 128.105.145.213:2181
 ```bash
 deleteall /benchmark
 ```
+
+---
+
+## Parser
+
+```bash
+python parser/zookeeper_benchmark_parser.py --results-dir results/zookeeper --output-dir charts/zookeeper
+```

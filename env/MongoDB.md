@@ -69,8 +69,10 @@ $ ./bin/ycsb load mongodb -s -P workloads/workloada -p mongodb.url="$MONGODB_URL
 $ ./bin/ycsb run mongodb -s -P workloads/workloada -p mongodb.url="$MONGODB_URL" -threads 16 > outputRun.txt
 ```
 
-### Display Results
+---
+
+## Parser
 
 ```bash
-$ python3 parser/mongodb_benchmark_parser.py --results_dir results/mongodb --output_dir charts/mongodb
+python parser/mongodb_benchmark_parser.py --results-dir results/mongodb --output-dir charts/mongodb
 ```

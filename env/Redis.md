@@ -89,3 +89,11 @@ $ ./bin/ycsb run redis -s -P workloads/workloada \
   -p "redis.port=6379" \
   > outputRun.txt
 ```
+
+---
+
+## Parser
+
+```bash
+python parser/redis_benchmark_parser.py --results-dir results/redis --output-dir charts/redis
+```
