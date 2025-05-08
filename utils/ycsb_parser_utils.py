@@ -344,6 +344,7 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(thread_counts)))
     
     # Create throughput subplot (first)
+    throughput_values = []
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -356,6 +357,8 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                 throughputs.append(workload_data['throughput'].values[0])
             else:
                 throughputs.append(0)
+        
+        throughput_values.extend(throughputs)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
@@ -371,7 +374,11 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     ax1.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax1.grid(axis='y', linestyle='--', alpha=0.7)
     
+    # Set reasonable y-axis limits for throughput
+    _set_reasonable_ylim(ax1, throughput_values)
+    
     # Create average read latency subplot (second)
+    read_avg_values = []
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -384,6 +391,8 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                 latencies.append(workload_data['read_avg_latency'].values[0])
             else:
                 latencies.append(0)
+        
+        read_avg_values.extend(latencies)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
@@ -399,7 +408,11 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     ax2.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax2.grid(axis='y', linestyle='--', alpha=0.7)
     
+    # Set reasonable y-axis limits for read avg latency
+    _set_reasonable_ylim(ax2, read_avg_values)
+    
     # Create P99 read latency subplot (third)
+    read_p99_values = []
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -412,6 +425,8 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                 latencies.append(workload_data['read_p99_latency'].values[0])
             else:
                 latencies.append(0)
+        
+        read_p99_values.extend(latencies)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
@@ -427,7 +442,11 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     ax3.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax3.grid(axis='y', linestyle='--', alpha=0.7)
     
+    # Set reasonable y-axis limits for read p99 latency
+    _set_reasonable_ylim(ax3, read_p99_values)
+    
     # Create average write latency subplot (fourth)
+    write_avg_values = []
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -440,6 +459,8 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                 latencies.append(workload_data['update_avg_latency'].values[0])
             else:
                 latencies.append(0)
+        
+        write_avg_values.extend(latencies)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
@@ -455,7 +476,11 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     ax4.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax4.grid(axis='y', linestyle='--', alpha=0.7)
     
+    # Set reasonable y-axis limits for write avg latency
+    _set_reasonable_ylim(ax4, write_avg_values)
+    
     # Create P99 write latency subplot (fifth)
+    write_p99_values = []
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -468,6 +493,8 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                 latencies.append(workload_data['update_p99_latency'].values[0])
             else:
                 latencies.append(0)
+        
+        write_p99_values.extend(latencies)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
@@ -482,6 +509,9 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     ax5.set_xticks(workload_positions)
     ax5.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax5.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Set reasonable y-axis limits for write p99 latency
+    _set_reasonable_ylim(ax5, write_p99_values)
     
     # Add legend (only once for the entire figure)
     handles, labels = ax1.get_legend_handles_labels()
@@ -501,3 +531,37 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     plt.close()
     
     print(f"Saved combined performance chart to {output_path}")
+
+def _set_reasonable_ylim(ax, values):
+    """Set reasonable y-axis limits to handle outliers.
+    
+    This function sets the y-axis limits to show the majority of the data clearly
+    while preventing extreme outliers from compressing the visualization of other values.
+    """
+    # Remove zeros and sort values
+    non_zero_values = [v for v in values if v > 0]
+    if not non_zero_values:
+        return
+    
+    # Sort values
+    sorted_values = sorted(non_zero_values)
+    
+    # Calculate percentiles
+    if len(sorted_values) >= 4:
+        # Use 95th percentile if we have enough data points
+        p95 = sorted_values[int(0.95 * len(sorted_values))]
+        
+        # Find the maximum non-outlier value (1.5 times the 95th percentile)
+        max_reasonable = p95 * 1.5
+        
+        # Set y-axis limit to the maximum reasonable value
+        current_ymax = ax.get_ylim()[1]
+        if max_reasonable < current_ymax:
+            ax.set_ylim(0, max_reasonable)
+            
+            # Add a text annotation indicating truncation
+            if max(sorted_values) > max_reasonable:
+                ax.text(0.98, 0.98, f"* Y-axis truncated\n  Max value: {int(max(sorted_values))}", 
+                        transform=ax.transAxes, ha='right', va='top', 
+                        bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.7),
+                        fontsize=10)
