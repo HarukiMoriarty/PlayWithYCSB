@@ -34,32 +34,34 @@ def collect_all_db_results(db_dirs):
     
     return all_results
 
-def create_throughput_comparison_chart(all_results, output_dir, thread_count=16):
-    """Create a chart comparing throughput across databases for a specific thread count."""
-    plt.figure(figsize=(14, 8))
+def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
+    """Create a single chart with 5 subplots comparing throughput and latencies across databases."""
+    fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(30, 8))
     
-    # Get common workloads across all databases
-    all_workloads = set()
+    # Get all workloads across all databases
+    workloads = set()
     for db_name, df in all_results.items():
         if 'workload' in df.columns:
-            all_workloads.update(df['workload'].unique())
+            workloads.update(df['workload'].unique())
     
-    workloads = sorted(all_workloads)
+    workloads = sorted(list(workloads))
     
-    # Position for each workload group on x-axis
-    workload_positions = np.arange(len(workloads))
+    # Number of databases
+    num_dbs = len(all_results)
     
     # Width of each bar group
     group_width = 0.8
-    # Number of databases
-    num_dbs = len(all_results)
     # Width of each bar within a group
     bar_width = group_width / num_dbs
     
-    # Colors for each database
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    # Position of each workload group on x-axis
+    workload_positions = np.arange(len(workloads))
     
-    # Create bars for each database
+    # Markers and colors for different databases
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    
+    # --- THROUGHPUT SUBPLOT (1) ---
+    throughput_values = []
     for i, (db_name, df) in enumerate(all_results.items()):
         # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
         if db_name == 'cassandra2-cql' and 'rf' in df.columns:
@@ -86,6 +88,8 @@ def create_throughput_comparison_chart(all_results, output_dir, thread_count=16)
             else:
                 throughputs.append(0)
         
+        throughput_values.extend(throughputs)
+        
         # Calculate position for this set of bars
         positions = workload_positions + (i - num_dbs/2 + 0.5) * bar_width
         
@@ -99,55 +103,21 @@ def create_throughput_comparison_chart(all_results, output_dir, thread_count=16)
                 display_name = 'Cassandra'
         
         # Plot bars
-        plt.bar(positions, throughputs, width=bar_width, label=display_name, color=colors[i % len(colors)])
+        ax1.bar(positions, throughputs, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
-    # Set chart labels and title
-    plt.xlabel('Workload', fontsize=14)
-    plt.ylabel('Throughput (ops/sec)', fontsize=14)
-    plt.title(f'Database Throughput Comparison ({thread_count} Threads)', fontsize=16)
+    # Set chart labels and title for throughput
+    ax1.set_xlabel('Workload', fontsize=12)
+    ax1.set_ylabel('Throughput (ops/sec)', fontsize=12)
+    ax1.set_title('Throughput', fontsize=14)
+    ax1.set_xticks(workload_positions)
+    ax1.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Set x-axis ticks to workload names
-    plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads], fontsize=12)
+    # Set reasonable y-axis limits for throughput
+    _set_reasonable_ylim(ax1, throughput_values)
     
-    # Add legend
-    plt.legend(fontsize=12)
-    
-    # Add grid for better readability
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    
-    # Save the figure
-    output_path = os.path.join(output_dir, f'db_comparison_throughput_{thread_count}threads.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"Saved throughput comparison chart to {output_path}")
-
-def create_latency_comparison_chart(all_results, output_dir, thread_count=16, metric='read_avg_latency'):
-    """Create a chart comparing latency across databases for a specific thread count."""
-    plt.figure(figsize=(14, 8))
-    
-    # Get common workloads across all databases
-    all_workloads = set()
-    for db_name, df in all_results.items():
-        if 'workload' in df.columns:
-            all_workloads.update(df['workload'].unique())
-    
-    workloads = sorted(all_workloads)
-    
-    # Position for each workload group on x-axis
-    workload_positions = np.arange(len(workloads))
-    
-    # Width of each bar group
-    group_width = 0.8
-    # Number of databases
-    num_dbs = len(all_results)
-    # Width of each bar within a group
-    bar_width = group_width / num_dbs
-    
-    # Colors for each database
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-    
-    # Create bars for each database
+    # --- READ AVG LATENCY SUBPLOT (2) ---
+    read_avg_values = []
     for i, (db_name, df) in enumerate(all_results.items()):
         # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
         if db_name == 'cassandra2-cql' and 'rf' in df.columns:
@@ -162,17 +132,19 @@ def create_latency_comparison_chart(all_results, output_dir, thread_count=16, me
         else:
             thread_data = df
         
-        # Get latency values for each workload
+        # Get read avg latency values for each workload
         latencies = []
         for workload in workloads:
             if 'workload' in thread_data.columns:
                 workload_data = thread_data[thread_data['workload'] == workload]
-                if not workload_data.empty and metric in workload_data.columns:
-                    latencies.append(workload_data[metric].values[0])
+                if not workload_data.empty and 'read_avg_latency' in workload_data.columns:
+                    latencies.append(workload_data['read_avg_latency'].values[0])
                 else:
                     latencies.append(0)
             else:
                 latencies.append(0)
+        
+        read_avg_values.extend(latencies)
         
         # Calculate position for this set of bars
         positions = workload_positions + (i - num_dbs/2 + 0.5) * bar_width
@@ -187,44 +159,21 @@ def create_latency_comparison_chart(all_results, output_dir, thread_count=16, me
                 display_name = 'Cassandra'
         
         # Plot bars
-        plt.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
+        ax2.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
-    # Set chart labels and title
-    plt.xlabel('Workload', fontsize=14)
+    # Set chart labels and title for read avg latency
+    ax2.set_xlabel('Workload', fontsize=12)
+    ax2.set_ylabel('Latency (μs)', fontsize=12)
+    ax2.set_title('Avg Read Latency', fontsize=14)
+    ax2.set_xticks(workload_positions)
+    ax2.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax2.grid(axis='y', linestyle='--', alpha=0.7)
     
-    metric_name = "Average Read Latency"
-    if metric == 'read_p99_latency':
-        metric_name = "P99 Read Latency"
+    # Set reasonable y-axis limits for read avg latency
+    _set_reasonable_ylim(ax2, read_avg_values)
     
-    plt.ylabel(f'{metric_name} (μs)', fontsize=14)
-    plt.title(f'Database {metric_name} Comparison ({thread_count} Threads)', fontsize=16)
-    
-    # Set x-axis ticks to workload names
-    plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads], fontsize=12)
-    
-    # Add legend
-    plt.legend(fontsize=12)
-    
-    # Add grid for better readability
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    
-    # Save the figure
-    metric_short = "avg" if metric == 'read_avg_latency' else "p99"
-    output_path = os.path.join(output_dir, f'db_comparison_{metric_short}_latency_{thread_count}threads.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"Saved {metric_name} comparison chart to {output_path}")
-
-def create_throughput_scaling_chart(all_results, output_dir, workload='a'):
-    """Create a chart showing how throughput scales with thread count for a specific workload."""
-    plt.figure(figsize=(12, 8))
-    
-    # Colors for each database
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-    markers = ['o', 's', '^', 'D']
-    
-    # For each database, plot throughput vs thread count
+    # --- READ P99 LATENCY SUBPLOT (3) ---
+    read_p99_values = []
     for i, (db_name, df) in enumerate(all_results.items()):
         # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
         if db_name == 'cassandra2-cql' and 'rf' in df.columns:
@@ -233,64 +182,54 @@ def create_throughput_scaling_chart(all_results, output_dir, workload='a'):
             elif 1 in df['rf'].values:
                 df = df[df['rf'] == 1]
         
-        # Filter data for the specified workload
-        if 'workload' in df.columns:
-            workload_data = df[df['workload'] == workload]
+        # Filter data for the specified thread count
+        if 'threads' in df.columns:
+            thread_data = df[df['threads'] == thread_count]
         else:
-            workload_data = df
+            thread_data = df
         
-        if not workload_data.empty and 'threads' in workload_data.columns and 'throughput' in workload_data.columns:
-            # Group by thread count and calculate mean throughput
-            thread_groups = workload_data.groupby('threads')['throughput'].mean().reset_index()
-            
-            # Sort by thread count
-            thread_groups = thread_groups.sort_values('threads')
-            
-            # Format database name for display
-            display_name = db_name
-            if db_name == 'cassandra2-cql':
-                if 'rf' in df.columns and not df.empty:
-                    rf = df['rf'].iloc[0]
-                    display_name = f'Cassandra (RF={rf})'
+        # Get read p99 latency values for each workload
+        latencies = []
+        for workload in workloads:
+            if 'workload' in thread_data.columns:
+                workload_data = thread_data[thread_data['workload'] == workload]
+                if not workload_data.empty and 'read_p99_latency' in workload_data.columns:
+                    latencies.append(workload_data['read_p99_latency'].values[0])
                 else:
-                    display_name = 'Cassandra'
-            
-            # Plot line
-            plt.plot(thread_groups['threads'], thread_groups['throughput'], 
-                     marker=markers[i % len(markers)], markersize=8, 
-                     color=colors[i % len(colors)], linewidth=2, 
-                     label=display_name)
+                    latencies.append(0)
+            else:
+                latencies.append(0)
+        
+        read_p99_values.extend(latencies)
+        
+        # Calculate position for this set of bars
+        positions = workload_positions + (i - num_dbs/2 + 0.5) * bar_width
+        
+        # Format database name for display
+        display_name = db_name
+        if db_name == 'cassandra2-cql':
+            if 'rf' in df.columns and not df.empty:
+                rf = df['rf'].iloc[0]
+                display_name = f'Cassandra (RF={rf})'
+            else:
+                display_name = 'Cassandra'
+        
+        # Plot bars
+        ax3.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
-    # Set chart labels and title
-    plt.xlabel('Number of Threads', fontsize=14)
-    plt.ylabel('Throughput (ops/sec)', fontsize=14)
-    plt.title(f'Database Throughput Scaling (Workload {workload.upper()})', fontsize=16)
+    # Set chart labels and title for read p99 latency
+    ax3.set_xlabel('Workload', fontsize=12)
+    ax3.set_ylabel('Latency (μs)', fontsize=12)
+    ax3.set_title('P99 Read Latency', fontsize=14)
+    ax3.set_xticks(workload_positions)
+    ax3.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax3.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Set x-axis to log scale for better visualization
-    plt.xscale('log', base=2)
+    # Set reasonable y-axis limits for read p99 latency
+    _set_reasonable_ylim(ax3, read_p99_values)
     
-    # Add grid
-    plt.grid(True, which="both", ls="-", alpha=0.7)
-    
-    # Add legend
-    plt.legend(fontsize=12)
-    
-    # Save the figure
-    output_path = os.path.join(output_dir, f'db_throughput_scaling_workload{workload}.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"Saved throughput scaling chart to {output_path}")
-
-def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='read_avg_latency'):
-    """Create a chart showing how latency scales with thread count for a specific workload."""
-    plt.figure(figsize=(14, 8))
-    
-    # Markers and colors for different databases
-    markers = ['o', 's', '^', 'D']
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-    
-    # For each database, plot latency vs thread count
+    # --- WRITE AVG LATENCY SUBPLOT (4) ---
+    write_avg_values = []
     for i, (db_name, df) in enumerate(all_results.items()):
         # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
         if db_name == 'cassandra2-cql' and 'rf' in df.columns:
@@ -299,60 +238,165 @@ def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='
             elif 1 in df['rf'].values:
                 df = df[df['rf'] == 1]
         
-        # Filter data for the specified workload
-        if 'workload' in df.columns:
-            workload_data = df[df['workload'] == workload]
+        # Filter data for the specified thread count
+        if 'threads' in df.columns:
+            thread_data = df[df['threads'] == thread_count]
         else:
-            workload_data = df
+            thread_data = df
         
-        if not workload_data.empty and 'threads' in workload_data.columns and metric in workload_data.columns:
-            # Group by thread count and calculate mean latency
-            thread_groups = workload_data.groupby('threads')[metric].mean().reset_index()
-            
-            # Sort by thread count
-            thread_groups = thread_groups.sort_values('threads')
-            
-            # Format database name for display
-            display_name = db_name
-            if db_name == 'cassandra2-cql':
-                if 'rf' in df.columns and not df.empty:
-                    rf = df['rf'].iloc[0]
-                    display_name = f'Cassandra (RF={rf})'
+        # Get write avg latency values for each workload
+        latencies = []
+        for workload in workloads:
+            if 'workload' in thread_data.columns:
+                workload_data = thread_data[thread_data['workload'] == workload]
+                if not workload_data.empty and 'update_avg_latency' in workload_data.columns:
+                    latencies.append(workload_data['update_avg_latency'].values[0])
                 else:
-                    display_name = 'Cassandra'
-            
-            # Plot line
-            plt.plot(thread_groups['threads'], thread_groups[metric], 
-                     marker=markers[i % len(markers)], markersize=8, 
-                     color=colors[i % len(colors)], linewidth=2, 
-                     label=display_name)
+                    latencies.append(0)
+            else:
+                latencies.append(0)
+        
+        write_avg_values.extend(latencies)
+        
+        # Calculate position for this set of bars
+        positions = workload_positions + (i - num_dbs/2 + 0.5) * bar_width
+        
+        # Format database name for display
+        display_name = db_name
+        if db_name == 'cassandra2-cql':
+            if 'rf' in df.columns and not df.empty:
+                rf = df['rf'].iloc[0]
+                display_name = f'Cassandra (RF={rf})'
+            else:
+                display_name = 'Cassandra'
+        
+        # Plot bars
+        ax4.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
-    # Set chart labels and title
-    plt.xlabel('Number of Threads', fontsize=14)
+    # Set chart labels and title for write avg latency
+    ax4.set_xlabel('Workload', fontsize=12)
+    ax4.set_ylabel('Latency (μs)', fontsize=12)
+    ax4.set_title('Avg Write Latency', fontsize=14)
+    ax4.set_xticks(workload_positions)
+    ax4.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax4.grid(axis='y', linestyle='--', alpha=0.7)
     
-    metric_name = "Average Read Latency"
-    if metric == 'read_p99_latency':
-        metric_name = "P99 Read Latency"
+    # Set reasonable y-axis limits for write avg latency
+    _set_reasonable_ylim(ax4, write_avg_values)
     
-    plt.ylabel(f'{metric_name} (μs)', fontsize=14)
-    plt.title(f'Database {metric_name} Scaling (Workload {workload.upper()})', fontsize=16)
+    # --- WRITE P99 LATENCY SUBPLOT (5) ---
+    write_p99_values = []
+    for i, (db_name, df) in enumerate(all_results.items()):
+        # For Cassandra, we'll use RF=3 for comparison (or RF=1 if 3 is not available)
+        if db_name == 'cassandra2-cql' and 'rf' in df.columns:
+            if 3 in df['rf'].values:
+                df = df[df['rf'] == 3]
+            elif 1 in df['rf'].values:
+                df = df[df['rf'] == 1]
+        
+        # Filter data for the specified thread count
+        if 'threads' in df.columns:
+            thread_data = df[df['threads'] == thread_count]
+        else:
+            thread_data = df
+        
+        # Get write p99 latency values for each workload
+        latencies = []
+        for workload in workloads:
+            if 'workload' in thread_data.columns:
+                workload_data = thread_data[thread_data['workload'] == workload]
+                if not workload_data.empty and 'update_p99_latency' in workload_data.columns:
+                    latencies.append(workload_data['update_p99_latency'].values[0])
+                else:
+                    latencies.append(0)
+            else:
+                latencies.append(0)
+        
+        write_p99_values.extend(latencies)
+        
+        # Calculate position for this set of bars
+        positions = workload_positions + (i - num_dbs/2 + 0.5) * bar_width
+        
+        # Format database name for display
+        display_name = db_name
+        if db_name == 'cassandra2-cql':
+            if 'rf' in df.columns and not df.empty:
+                rf = df['rf'].iloc[0]
+                display_name = f'Cassandra (RF={rf})'
+            else:
+                display_name = 'Cassandra'
+        
+        # Plot bars
+        ax5.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
-    # Set x-axis to log scale for better visualization
-    plt.xscale('log', base=2)
+    # Set chart labels and title for write p99 latency
+    ax5.set_xlabel('Workload', fontsize=12)
+    ax5.set_ylabel('Latency (μs)', fontsize=12)
+    ax5.set_title('P99 Write Latency', fontsize=14)
+    ax5.set_xticks(workload_positions)
+    ax5.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax5.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Add grid
-    plt.grid(True, which="both", ls="-", alpha=0.7)
+    # Set reasonable y-axis limits for write p99 latency
+    _set_reasonable_ylim(ax5, write_p99_values)
     
-    # Add legend
-    plt.legend(fontsize=12)
+    # Add legend (only once for the entire figure)
+    handles, labels = ax1.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.05), 
+               fancybox=True, shadow=True, ncol=len(all_results))
     
-    # Save the figure
-    metric_short = "avg" if metric == 'read_avg_latency' else "p99"
-    output_path = os.path.join(output_dir, f'db_latency_{metric_short}_scaling_workload{workload}.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    # Add overall title
+    fig.suptitle(f'Database Comparison - {thread_count} Threads', fontsize=16)
+    
+    # Adjust layout
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.15)  # Make room for the legend
+    
+    # Save the figure as PDF
+    output_path = os.path.join(output_dir, f'db_combined_comparison_{thread_count}threads.pdf')
+    plt.savefig(output_path, format='pdf', bbox_inches='tight')
+    
+    # Also save as PNG for quick viewing
+    png_output_path = os.path.join(output_dir, f'db_combined_comparison_{thread_count}threads.png')
+    plt.savefig(png_output_path, dpi=300, bbox_inches='tight')
+    
     plt.close()
     
-    print(f"Saved {metric_name} scaling chart to {output_path}")
+    print(f"Saved combined comparison chart to {output_path} and {png_output_path}")
+
+def _set_reasonable_ylim(ax, values):
+    """Set reasonable y-axis limits to handle outliers.
+    
+    This function sets the y-axis limits to show the majority of the data clearly
+    while preventing extreme outliers from compressing the visualization of other values.
+    """
+    # Remove zeros and sort values
+    non_zero_values = [v for v in values if v > 0]
+    if not non_zero_values:
+        return
+    
+    # Sort values
+    sorted_values = sorted(non_zero_values)
+    
+    # Calculate percentiles
+    if len(sorted_values) >= 4:
+        # Use 95th percentile if we have enough data points
+        p95 = sorted_values[int(0.95 * len(sorted_values))]
+        
+        # Find the maximum non-outlier value (1.5 times the 95th percentile)
+        max_reasonable = p95 * 1.5
+        
+        # Set y-axis limit to the maximum reasonable value
+        current_ymax = ax.get_ylim()[1]
+        if max_reasonable < current_ymax:
+            ax.set_ylim(0, max_reasonable)
+            
+            # Add a text annotation indicating truncation
+            if max(sorted_values) > max_reasonable:
+                ax.text(0.98, 0.98, f"* Y-axis truncated\n  Max value: {int(max(sorted_values))}", 
+                        transform=ax.transAxes, ha='right', va='top', 
+                        bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.7),
+                        fontsize=10)
 
 def main():
     parser = argparse.ArgumentParser(description='Compare performance across different databases')
@@ -390,16 +434,7 @@ def main():
     # Generate comparison charts for each specified thread count
     for thread_count in args.threads:
         print(f"\nGenerating comparison charts for {thread_count} threads...")
-        create_throughput_comparison_chart(all_results, args.output_dir, thread_count)
-        create_latency_comparison_chart(all_results, args.output_dir, thread_count, 'read_avg_latency')
-        create_latency_comparison_chart(all_results, args.output_dir, thread_count, 'read_p99_latency')
-    
-    # Generate thread scaling charts for each specified workload
-    for workload in args.workloads:
-        print(f"\nGenerating scaling charts for workload {workload}...")
-        create_throughput_scaling_chart(all_results, args.output_dir, workload)
-        create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_avg_latency')
-        create_latency_scaling_chart(all_results, args.output_dir, workload, 'read_p99_latency')
+        create_combined_comparison_chart(all_results, args.output_dir, thread_count)
     
     print("\nAll comparison charts generated successfully!")
 
