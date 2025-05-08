@@ -58,7 +58,7 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
     workload_positions = np.arange(len(workloads))
     
     # Markers and colors for different databases
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    colors = plt.cm.viridis(np.linspace(0, 0.9, len(all_results)))
     
     # --- THROUGHPUT SUBPLOT (1) ---
     throughput_values = []
