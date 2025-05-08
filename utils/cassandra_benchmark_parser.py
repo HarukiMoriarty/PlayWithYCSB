@@ -4,7 +4,8 @@ from ycsb_parser_utils import (
     collect_all_results,
     create_throughput_by_workload_chart,
     create_latency_by_thread_chart,
-    create_p99_latency_chart
+    create_p99_latency_chart,
+    create_combined_performance_chart
 )
 
 def main():
@@ -37,6 +38,10 @@ def main():
     create_throughput_by_workload_chart(results, args.output_dir, 'cassandra2-cql')
     create_latency_by_thread_chart(results, args.output_dir, 'cassandra2-cql')
     create_p99_latency_chart(results, args.output_dir, 'cassandra2-cql')
+    
+    # Generate combined performance chart
+    print("Generating combined performance chart...")
+    create_combined_performance_chart(results, args.output_dir, 'cassandra2-cql')
     
     print("Done!")
 
