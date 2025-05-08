@@ -126,5 +126,5 @@ mvn -pl site.ycsb:cassandra2 -am clean package -DskipTests
 ## Parser
 
 ```bash
-python parser/cassandra_benchmark_parser.py --results-dir results/cassandra2 --output-dir charts/cassandra
+python utils/cassandra_benchmark_parser.py --results-dir results/cassandra2 --output-dir charts/cassandra
 ```

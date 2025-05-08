@@ -95,5 +95,5 @@ $ ./bin/ycsb run redis -s -P workloads/workloada \
 ## Parser
 
 ```bash
-python parser/redis_benchmark_parser.py --results-dir results/redis --output-dir charts/redis
+python utils/redis_benchmark_parser.py --results-dir results/redis --output-dir charts/redis
 ```

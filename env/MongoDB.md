@@ -74,5 +74,5 @@ $ ./bin/ycsb run mongodb -s -P workloads/workloada -p mongodb.url="$MONGODB_URL"
 ## Parser
 
 ```bash
-python parser/mongodb_benchmark_parser.py --results-dir results/mongodb --output-dir charts/mongodb
+python utils/mongodb_benchmark_parser.py --results-dir results/mongodb --output-dir charts/mongodb
 ```

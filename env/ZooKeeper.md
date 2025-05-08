@@ -122,5 +122,5 @@ deleteall /benchmark
 ## Parser
 
 ```bash
-python parser/zookeeper_benchmark_parser.py --results-dir results/zookeeper --output-dir charts/zookeeper
+python utils/zookeeper_benchmark_parser.py --results-dir results/zookeeper --output-dir charts/zookeeper
 ```
