@@ -305,7 +305,7 @@ def _create_p99_latency_chart(df, workloads, thread_counts, output_dir, chart_na
     print(f"Saved P99 latency chart to {output_path}")
 
 def create_combined_performance_chart(results, output_dir, db_name):
-    """Create a single figure with throughput, avg latency, and p99 latency charts side by side.
+    """Create a single figure with throughput, read/write latencies charts side by side.
     
     Args:
         results: List of benchmark result dictionaries
@@ -328,9 +328,9 @@ def create_combined_performance_chart(results, output_dir, db_name):
         _create_combined_performance_chart(df, workloads, thread_counts, output_dir, db_name)
 
 def _create_combined_performance_chart(df, workloads, thread_counts, output_dir, chart_name):
-    """Helper function to create combined performance chart with three subplots side by side."""
-    # Create a figure with 3 subplots side by side
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 8))
+    """Helper function to create combined performance chart with five subplots side by side."""
+    # Create a figure with 5 subplots side by side
+    fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(30, 8))
     
     # Width of each bar group
     group_width = 0.8
@@ -343,7 +343,7 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     # Colors for different thread counts
     colors = plt.cm.viridis(np.linspace(0, 0.9, len(thread_counts)))
     
-    # Create throughput subplot (left)
+    # Create throughput subplot (first)
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -366,12 +366,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     # Set chart labels and title for throughput
     ax1.set_xlabel('Workload', fontsize=12)
     ax1.set_ylabel('Throughput (ops/sec)', fontsize=12)
-    ax1.set_title(f'{chart_name.capitalize()} YCSB Throughput', fontsize=14)
+    ax1.set_title(f'Throughput', fontsize=14)
     ax1.set_xticks(workload_positions)
-    ax1.set_xticklabels([f'Workload {w.upper()}' for w in workloads])
+    ax1.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax1.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Create average latency subplot (middle)
+    # Create average read latency subplot (second)
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -391,15 +391,15 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         # Plot bars
         ax2.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
-    # Set chart labels and title for avg latency
+    # Set chart labels and title for avg read latency
     ax2.set_xlabel('Workload', fontsize=12)
-    ax2.set_ylabel('Average Read Latency (μs)', fontsize=12)
-    ax2.set_title(f'{chart_name.capitalize()} YCSB Average Read Latency', fontsize=14)
+    ax2.set_ylabel('Latency (μs)', fontsize=12)
+    ax2.set_title(f'Avg Read Latency', fontsize=14)
     ax2.set_xticks(workload_positions)
-    ax2.set_xticklabels([f'Workload {w.upper()}' for w in workloads])
+    ax2.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax2.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Create P99 latency subplot (right)
+    # Create P99 read latency subplot (third)
     for i, thread_count in enumerate(thread_counts):
         # Filter data for this thread count
         thread_data = df[df['threads'] == thread_count]
@@ -419,13 +419,69 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         # Plot bars
         ax3.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
-    # Set chart labels and title for P99 latency
+    # Set chart labels and title for P99 read latency
     ax3.set_xlabel('Workload', fontsize=12)
-    ax3.set_ylabel('P99 Read Latency (μs)', fontsize=12)
-    ax3.set_title(f'{chart_name.capitalize()} YCSB P99 Read Latency', fontsize=14)
+    ax3.set_ylabel('Latency (μs)', fontsize=12)
+    ax3.set_title(f'P99 Read Latency', fontsize=14)
     ax3.set_xticks(workload_positions)
-    ax3.set_xticklabels([f'Workload {w.upper()}' for w in workloads])
+    ax3.set_xticklabels([f'{w.upper()}' for w in workloads])
     ax3.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Create average write latency subplot (fourth)
+    for i, thread_count in enumerate(thread_counts):
+        # Filter data for this thread count
+        thread_data = df[df['threads'] == thread_count]
+        
+        # Get average write latency values for each workload
+        latencies = []
+        for workload in workloads:
+            workload_data = thread_data[thread_data['workload'] == workload]
+            if not workload_data.empty and 'update_avg_latency' in workload_data.columns:
+                latencies.append(workload_data['update_avg_latency'].values[0])
+            else:
+                latencies.append(0)
+        
+        # Calculate position for this set of bars
+        positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
+        
+        # Plot bars
+        ax4.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
+    
+    # Set chart labels and title for avg write latency
+    ax4.set_xlabel('Workload', fontsize=12)
+    ax4.set_ylabel('Latency (μs)', fontsize=12)
+    ax4.set_title(f'Avg Write Latency', fontsize=14)
+    ax4.set_xticks(workload_positions)
+    ax4.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax4.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Create P99 write latency subplot (fifth)
+    for i, thread_count in enumerate(thread_counts):
+        # Filter data for this thread count
+        thread_data = df[df['threads'] == thread_count]
+        
+        # Get P99 write latency values for each workload
+        latencies = []
+        for workload in workloads:
+            workload_data = thread_data[thread_data['workload'] == workload]
+            if not workload_data.empty and 'update_p99_latency' in workload_data.columns:
+                latencies.append(workload_data['update_p99_latency'].values[0])
+            else:
+                latencies.append(0)
+        
+        # Calculate position for this set of bars
+        positions = workload_positions + (i - len(thread_counts)/2 + 0.5) * bar_width
+        
+        # Plot bars
+        ax5.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
+    
+    # Set chart labels and title for P99 write latency
+    ax5.set_xlabel('Workload', fontsize=12)
+    ax5.set_ylabel('Latency (μs)', fontsize=12)
+    ax5.set_title(f'P99 Write Latency', fontsize=14)
+    ax5.set_xticks(workload_positions)
+    ax5.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax5.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Add legend (only once for the entire figure)
     handles, labels = ax1.get_legend_handles_labels()
@@ -433,7 +489,7 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
                fancybox=True, shadow=True, ncol=len(thread_counts))
     
     # Add overall title
-    fig.suptitle(f'{chart_name.capitalize()} YCSB Performance Metrics by Workload and Thread Count', fontsize=16)
+    fig.suptitle(f'{chart_name.capitalize()} YCSB Performance Metrics', fontsize=16)
     
     # Adjust layout
     plt.tight_layout()
