@@ -525,12 +525,17 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.15)  # Make room for the legend
     
-    # Save the figure
-    output_path = os.path.join(output_dir, f'{chart_name}_combined_performance.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    # Save the figure as PDF
+    output_path = os.path.join(output_dir, f'{chart_name}_combined_performance.pdf')
+    plt.savefig(output_path, format='pdf', bbox_inches='tight')
+    
+    # Also save as PNG for quick viewing
+    png_output_path = os.path.join(output_dir, f'{chart_name}_combined_performance.png')
+    plt.savefig(png_output_path, dpi=300, bbox_inches='tight')
+    
     plt.close()
     
-    print(f"Saved combined performance chart to {output_path}")
+    print(f"Saved combined performance chart to {output_path} and {png_output_path}")
 
 def _set_reasonable_ylim(ax, values):
     """Set reasonable y-axis limits to handle outliers.
