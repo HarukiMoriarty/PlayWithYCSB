@@ -262,9 +262,9 @@ def create_throughput_scaling_chart(all_results, output_dir, workload='a'):
                      label=display_name)
     
     # Set chart labels and title
-    plt.xlabel('Number of Threads', fontsize=14)
-    plt.ylabel('Throughput (ops/sec)', fontsize=14)
-    plt.title(f'Database Throughput Scaling (Workload {workload.upper()})', fontsize=16)
+    plt.xlabel('Number of Threads', fontsize=22)
+    plt.ylabel('Throughput (ops/sec)', fontsize=22)
+    plt.title(f'Database Throughput Scaling (Workload {workload.upper()})', fontsize=24)
     
     # Set x-axis to log scale for better visualization
     plt.xscale('log', base=2)
@@ -278,6 +278,10 @@ def create_throughput_scaling_chart(all_results, output_dir, workload='a'):
     # Save the figure
     output_path = os.path.join(output_dir, f'db_throughput_scaling_workload{workload}.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    # Also save as PDF
+    pdf_output_path = os.path.join(output_dir, f'db_throughput_scaling_workload{workload}.pdf')
+    plt.savefig(pdf_output_path, format='pdf', bbox_inches='tight')
     plt.close()
     
     print(f"Saved throughput scaling chart to {output_path}")
@@ -328,14 +332,16 @@ def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='
                      label=display_name)
     
     # Set chart labels and title
-    plt.xlabel('Number of Threads', fontsize=14)
+    plt.xlabel('Number of Threads', fontsize=22)
     
     metric_name = "Average Read Latency"
     if metric == 'read_p99_latency':
         metric_name = "P99 Read Latency"
     
-    plt.ylabel(f'{metric_name} (μs)', fontsize=14)
-    plt.title(f'Database {metric_name} Scaling (Workload {workload.upper()})', fontsize=16)
+    plt.ylabel(f'{metric_name} (μs)', fontsize=22)
+    plt.title(f'Database {metric_name} Scaling (Workload {workload.upper()})', fontsize=24)
+    plt.xticks(fontsize=22)
+    plt.yticks(fontsize=22)
     
     # Set x-axis to log scale for better visualization
     plt.xscale('log', base=2)
@@ -344,12 +350,16 @@ def create_latency_scaling_chart(all_results, output_dir, workload='a', metric='
     plt.grid(True, which="both", ls="-", alpha=0.7)
     
     # Add legend
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=22)
     
     # Save the figure
     metric_short = "avg" if metric == 'read_avg_latency' else "p99"
     output_path = os.path.join(output_dir, f'db_latency_{metric_short}_scaling_workload{workload}.png')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    # Also save as PDF
+    pdf_output_path = os.path.join(output_dir, f'db_latency_{metric_short}_scaling_workload{workload}.pdf')
+    plt.savefig(pdf_output_path, format='pdf', bbox_inches='tight')
     plt.close()
     
     print(f"Saved {metric_name} scaling chart to {output_path}")
