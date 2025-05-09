@@ -106,11 +106,12 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
         ax1.bar(positions, throughputs, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
     # Set chart labels and title for throughput
-    ax1.set_xlabel('Workload', fontsize=12)
-    ax1.set_ylabel('Throughput (ops/sec)', fontsize=12)
-    ax1.set_title('Throughput', fontsize=14)
+    ax1.set_xlabel('Workload', fontsize=22)
+    ax1.set_ylabel('Throughput (ops/sec)', fontsize=22)
+    ax1.set_title('Throughput', fontsize=24)
     ax1.set_xticks(workload_positions)
     ax1.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax1.tick_params(axis='both', which='major', labelsize=22)
     ax1.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for throughput
@@ -162,11 +163,12 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
         ax2.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
     # Set chart labels and title for read avg latency
-    ax2.set_xlabel('Workload', fontsize=12)
-    ax2.set_ylabel('Latency (μs)', fontsize=12)
-    ax2.set_title('Avg Read Latency', fontsize=14)
+    ax2.set_xlabel('Workload', fontsize=22)
+    ax2.set_ylabel('Latency (μs)', fontsize=22)
+    ax2.set_title('Avg Read Latency', fontsize=24)
     ax2.set_xticks(workload_positions)
     ax2.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax2.tick_params(axis='both', which='major', labelsize=22)
     ax2.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for read avg latency
@@ -218,11 +220,12 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
         ax3.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
     # Set chart labels and title for read p99 latency
-    ax3.set_xlabel('Workload', fontsize=12)
-    ax3.set_ylabel('Latency (μs)', fontsize=12)
-    ax3.set_title('P99 Read Latency', fontsize=14)
+    ax3.set_xlabel('Workload', fontsize=22)
+    ax3.set_ylabel('Latency (μs)', fontsize=22)
+    ax3.set_title('P99 Read Latency', fontsize=24)
     ax3.set_xticks(workload_positions)
     ax3.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax3.tick_params(axis='both', which='major', labelsize=22)
     ax3.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for read p99 latency
@@ -274,11 +277,12 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
         ax4.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
     # Set chart labels and title for write avg latency
-    ax4.set_xlabel('Workload', fontsize=12)
-    ax4.set_ylabel('Latency (μs)', fontsize=12)
-    ax4.set_title('Avg Write Latency', fontsize=14)
+    ax4.set_xlabel('Workload', fontsize=22)
+    ax4.set_ylabel('Latency (μs)', fontsize=22)
+    ax4.set_title('Avg Write Latency', fontsize=24)
     ax4.set_xticks(workload_positions)
     ax4.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax4.tick_params(axis='both', which='major', labelsize=22)
     ax4.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for write avg latency
@@ -330,11 +334,12 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
         ax5.bar(positions, latencies, width=bar_width, label=display_name, color=colors[i % len(colors)])
     
     # Set chart labels and title for write p99 latency
-    ax5.set_xlabel('Workload', fontsize=12)
-    ax5.set_ylabel('Latency (μs)', fontsize=12)
-    ax5.set_title('P99 Write Latency', fontsize=14)
+    ax5.set_xlabel('Workload', fontsize=22)
+    ax5.set_ylabel('Latency (μs)', fontsize=22)
+    ax5.set_title('P99 Write Latency', fontsize=24)
     ax5.set_xticks(workload_positions)
     ax5.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax5.tick_params(axis='both', which='major', labelsize=22)
     ax5.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for write p99 latency
@@ -343,10 +348,10 @@ def create_combined_comparison_chart(all_results, output_dir, thread_count=16):
     # Add legend (only once for the entire figure)
     handles, labels = ax1.get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.05), 
-               fancybox=True, shadow=True, ncol=len(all_results))
+               fancybox=True, shadow=True, ncol=len(all_results), fontsize=22)
     
     # Add overall title
-    fig.suptitle(f'Database Comparison - {thread_count} Threads', fontsize=16)
+    fig.suptitle(f'Database Comparison - {thread_count} Threads', fontsize=26)
     
     # Adjust layout
     plt.tight_layout()
@@ -396,7 +401,7 @@ def _set_reasonable_ylim(ax, values):
                 ax.text(0.98, 0.98, f"* Y-axis truncated\n  Max value: {int(max(sorted_values))}", 
                         transform=ax.transAxes, ha='right', va='top', 
                         bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.7),
-                        fontsize=10)
+                        fontsize=18)
 
 def main():
     parser = argparse.ArgumentParser(description='Compare performance across different databases')

@@ -144,15 +144,15 @@ def _create_throughput_chart(df, workloads, thread_counts, output_dir, chart_nam
         plt.bar(positions, throughputs, width=bar_width, label=f'{thread_count} Threads')
     
     # Set chart labels and title
-    plt.xlabel('Workload', fontsize=12)
-    plt.ylabel('Throughput (ops/sec)', fontsize=12)
-    plt.title(f'{chart_name.capitalize()} YCSB Throughput by Workload and Thread Count', fontsize=14)
+    plt.xlabel('Workload', fontsize=20)
+    plt.ylabel('Throughput (ops/sec)', fontsize=20)
+    plt.title(f'{chart_name.capitalize()} YCSB Throughput by Workload and Thread Count', fontsize=22)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
     
     # Add legend
-    plt.legend(title='Thread Count')
+    plt.legend(title='Thread Count', fontsize=20)
     
     # Add grid for better readability
     plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -214,15 +214,15 @@ def _create_latency_chart(df, workloads, thread_counts, output_dir, chart_name):
         plt.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads')
     
     # Set chart labels and title
-    plt.xlabel('Workload', fontsize=12)
-    plt.ylabel('Average Read Latency (μs)', fontsize=12)
-    plt.title(f'{chart_name.capitalize()} YCSB Average Read Latency by Workload and Thread Count', fontsize=14)
+    plt.xlabel('Workload', fontsize=20)
+    plt.ylabel('Average Read Latency (μs)', fontsize=20)
+    plt.title(f'{chart_name.capitalize()} YCSB Average Read Latency by Workload and Thread Count', fontsize=22)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
     
     # Add legend
-    plt.legend(title='Thread Count')
+    plt.legend(title='Thread Count', fontsize=20)
     
     # Add grid for better readability
     plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -284,15 +284,15 @@ def _create_p99_latency_chart(df, workloads, thread_counts, output_dir, chart_na
         plt.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads')
     
     # Set chart labels and title
-    plt.xlabel('Workload', fontsize=12)
-    plt.ylabel('P99 Read Latency (μs)', fontsize=12)
-    plt.title(f'{chart_name.capitalize()} YCSB P99 Read Latency by Workload and Thread Count', fontsize=14)
+    plt.xlabel('Workload', fontsize=20)
+    plt.ylabel('P99 Read Latency (μs)', fontsize=20)
+    plt.title(f'{chart_name.capitalize()} YCSB P99 Read Latency by Workload and Thread Count', fontsize=22)
     
     # Set x-axis ticks to workload names
     plt.xticks(workload_positions, [f'Workload {w.upper()}' for w in workloads])
     
     # Add legend
-    plt.legend(title='Thread Count')
+    plt.legend(title='Thread Count', fontsize=20)
     
     # Add grid for better readability
     plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -367,11 +367,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         ax1.bar(positions, throughputs, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
     # Set chart labels and title for throughput
-    ax1.set_xlabel('Workload', fontsize=12)
-    ax1.set_ylabel('Throughput (ops/sec)', fontsize=12)
-    ax1.set_title(f'Throughput', fontsize=14)
+    ax1.set_xlabel('Workload', fontsize=20)
+    ax1.set_ylabel('Throughput (ops/sec)', fontsize=20)
+    ax1.set_title(f'Throughput', fontsize=22)
     ax1.set_xticks(workload_positions)
-    ax1.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax1.set_xticklabels([f'{w.upper()}' for w in workloads], fontsize=20)
+    ax1.tick_params(axis='both', which='major', labelsize=20)
     ax1.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for throughput
@@ -401,11 +402,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         ax2.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
     # Set chart labels and title for avg read latency
-    ax2.set_xlabel('Workload', fontsize=12)
-    ax2.set_ylabel('Latency (μs)', fontsize=12)
-    ax2.set_title(f'Avg Read Latency', fontsize=14)
+    ax2.set_xlabel('Workload', fontsize=20)
+    ax2.set_ylabel('Latency (μs)', fontsize=20)
+    ax2.set_title(f'Avg Read Latency', fontsize=22)
     ax2.set_xticks(workload_positions)
-    ax2.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax2.set_xticklabels([f'{w.upper()}' for w in workloads], fontsize=20)
+    ax2.tick_params(axis='both', which='major', labelsize=20)
     ax2.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for read avg latency
@@ -435,11 +437,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         ax3.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
     # Set chart labels and title for P99 read latency
-    ax3.set_xlabel('Workload', fontsize=12)
-    ax3.set_ylabel('Latency (μs)', fontsize=12)
-    ax3.set_title(f'P99 Read Latency', fontsize=14)
+    ax3.set_xlabel('Workload', fontsize=20)
+    ax3.set_ylabel('Latency (μs)', fontsize=20)
+    ax3.set_title(f'P99 Read Latency', fontsize=22)
     ax3.set_xticks(workload_positions)
-    ax3.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax3.set_xticklabels([f'{w.upper()}' for w in workloads], fontsize=20)
+    ax3.tick_params(axis='both', which='major', labelsize=20)
     ax3.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for read p99 latency
@@ -469,11 +472,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         ax4.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
     # Set chart labels and title for avg write latency
-    ax4.set_xlabel('Workload', fontsize=12)
-    ax4.set_ylabel('Latency (μs)', fontsize=12)
-    ax4.set_title(f'Avg Write Latency', fontsize=14)
+    ax4.set_xlabel('Workload', fontsize=20)
+    ax4.set_ylabel('Latency (μs)', fontsize=20)
+    ax4.set_title(f'Avg Write Latency', fontsize=22)
     ax4.set_xticks(workload_positions)
-    ax4.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax4.set_xticklabels([f'{w.upper()}' for w in workloads], fontsize=20)
+    ax4.tick_params(axis='both', which='major', labelsize=20)
     ax4.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for write avg latency
@@ -503,11 +507,12 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
         ax5.bar(positions, latencies, width=bar_width, label=f'{thread_count} Threads', color=colors[i])
     
     # Set chart labels and title for P99 write latency
-    ax5.set_xlabel('Workload', fontsize=12)
-    ax5.set_ylabel('Latency (μs)', fontsize=12)
-    ax5.set_title(f'P99 Write Latency', fontsize=14)
+    ax5.set_xlabel('Workload', fontsize=20)
+    ax5.set_ylabel('Latency (μs)', fontsize=20)
+    ax5.set_title(f'P99 Write Latency', fontsize=22)
     ax5.set_xticks(workload_positions)
-    ax5.set_xticklabels([f'{w.upper()}' for w in workloads])
+    ax5.set_xticklabels([f'{w.upper()}' for w in workloads], fontsize=20)
+    ax5.tick_params(axis='both', which='major', labelsize=20)
     ax5.grid(axis='y', linestyle='--', alpha=0.7)
     
     # Set reasonable y-axis limits for write p99 latency
@@ -516,10 +521,10 @@ def _create_combined_performance_chart(df, workloads, thread_counts, output_dir,
     # Add legend (only once for the entire figure)
     handles, labels = ax1.get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.05), 
-               fancybox=True, shadow=True, ncol=len(thread_counts))
+               fancybox=True, shadow=True, ncol=len(thread_counts), fontsize=20)
     
     # Add overall title
-    fig.suptitle(f'{chart_name.capitalize()} YCSB Performance Metrics', fontsize=16)
+    fig.suptitle(f'{chart_name.capitalize()} YCSB Performance Metrics', fontsize=26)
     
     # Adjust layout
     plt.tight_layout()
@@ -569,4 +574,4 @@ def _set_reasonable_ylim(ax, values):
                 ax.text(0.98, 0.98, f"* Y-axis truncated\n  Max value: {int(max(sorted_values))}", 
                         transform=ax.transAxes, ha='right', va='top', 
                         bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.7),
-                        fontsize=10)
+                        fontsize=18)
